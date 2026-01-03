@@ -8,7 +8,7 @@ import Start from "./pages/Start";
 
 const App = () => {
   const [phase, setPhase] = useState(
-    JSON.parse(localStorage.getItem("game_state"))?.phase || "setup"
+    JSON.parse(localStorage.getItem("game_state"))?.phase || "start"
   );
 
   // هر 200ms بررسی کن phase تو localStorage تغییر کرده؟
