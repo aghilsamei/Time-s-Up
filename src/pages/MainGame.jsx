@@ -7,13 +7,12 @@ const MainGame = () => {
   const [players, setPlayers] = useState([]);
   const [teams, setTeams] = useState([]);
   const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
-  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
-  const [cards, setCards] = useState([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [cards, setCards] = useState([]);
+  const [remainingCards, setRemainingCards] = useState([]);
   const [timeLeft, setTimeLeft] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [askLastCard, setAskLastCard] = useState(false);
-  const [remainingCards, setRemainingCards] = useState([]);
 
   const timerRef = useRef(null);
   const audioRef = useRef(null);
@@ -31,6 +30,7 @@ const MainGame = () => {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
       }
+      clearTimeout(timerRef.current);
     };
   }, []);
 
@@ -38,7 +38,7 @@ const MainGame = () => {
   useEffect(() => {
     const storedPlayers = JSON.parse(localStorage.getItem("players")) || [];
     const storedTeams = JSON.parse(localStorage.getItem("teams")) || [];
-    const gameSettings = JSON.parse(localStorage.getItem("game_settings")) || {};
+    const gameSettings = JSON.parse(localStorage.getItem("game_settings")) || { roundTime: 60 };
 
     setPlayers(storedPlayers);
     setTeams(storedTeams);
@@ -46,6 +46,7 @@ const MainGame = () => {
     const allCards = storedPlayers
       .flatMap((p) => p.givenCards)
       .sort(() => 0.5 - Math.random());
+
     setRemainingCards(allCards);
     setCards([allCards[0]]);
     setCurrentCardIndex(0);
@@ -59,28 +60,34 @@ const MainGame = () => {
     } else if (timeLeft === 0 && timerRunning) {
       setTimerRunning(false);
       setAskLastCard(true);
-      if (audioRef.current) audioRef.current.pause(); // توقف صدا وقتی تایمر صفر شد
     }
+
     return () => clearTimeout(timerRef.current);
   }, [timeLeft, timerRunning]);
 
-  // شروع تایمر با پخش صدا حتماً توسط کاربر
+  // توقف خودکار صدا وقتی تایمر متوقف شد
+  useEffect(() => {
+    if (!timerRunning && audioRef.current) {
+      audioRef.current.pause();
+    }
+  }, [timerRunning]);
+
+  // شروع تایمر با تعامل کاربر
   const startTimer = () => {
     if (timerRunning) return;
 
-    const gameSettings = JSON.parse(localStorage.getItem("game_settings"));
+    const gameSettings = JSON.parse(localStorage.getItem("game_settings")) || { roundTime: 60 };
     if (timeLeft === 0) setTimeLeft(gameSettings.roundTime);
 
     setTimerRunning(true);
     setAskLastCard(false);
 
-    // 🔊 پخش صدا با تعامل کاربر
+    // 🔊 پخش صدا
     if (audioRef.current) {
-      audioRef.current.currentTime = 4; // شروع از ثانیه 4
       audioRef.current.loop = true;
-      audioRef.current.play().catch((err) => {
-        console.log("پخش صدا بلاک شد:", err);
-      });
+      audioRef.current.play().then(() => {
+        audioRef.current.currentTime = 0; // شروع از ثانیه 0 یا هر ثانیه دلخواه
+      }).catch((err) => console.log("پخش صدا بلاک شد:", err));
     }
   };
 
@@ -88,6 +95,7 @@ const MainGame = () => {
   const nextCard = (correct = true) => {
     const updatedTeams = [...teams];
     if (correct) updatedTeams[currentTeamIndex].score += 1;
+
     setTeams(updatedTeams);
     localStorage.setItem("teams", JSON.stringify(updatedTeams));
 
@@ -108,8 +116,8 @@ const MainGame = () => {
 
   // پاسخ به آخرین کارت
   const handleLastCardAnswer = (said) => {
-    let newRemaining = [...remainingCards];
     const updatedTeams = [...teams];
+    let newRemaining = [...remainingCards];
 
     if (said) {
       updatedTeams[currentTeamIndex].score += 1;
@@ -123,7 +131,6 @@ const MainGame = () => {
 
     setAskLastCard(false);
     setTimerRunning(false);
-    if (audioRef.current) audioRef.current.pause();
 
     if (newRemaining.length === 0) {
       alert("تمام کارت‌های دور بازی تمام شد!");
@@ -139,26 +146,22 @@ const MainGame = () => {
     setCurrentTeamIndex(nextIndex);
     setCurrentCardIndex(0);
     setTimerRunning(false);
-    if (audioRef.current) audioRef.current.pause();
   };
 
   const startNextRound = () => {
     const allCards = players
       .flatMap((p) => p.givenCards)
       .sort(() => 0.5 - Math.random());
+
     setRemainingCards(allCards);
     setCards([allCards[0]]);
     setCurrentTeamIndex(0);
     setCurrentCardIndex(0);
     setTimerRunning(false);
-    if (audioRef.current) audioRef.current.pause();
   };
 
   const endGame = () => {
-    const confirmEnd = window.confirm(
-      "آیا مطمئنی می‌خوای بازی رو به طور کامل تموم کنی؟"
-    );
-    if (!confirmEnd) return;
+    if (!window.confirm("آیا مطمئنی می‌خوای بازی رو به طور کامل تموم کنی؟")) return;
 
     localStorage.removeItem("players");
     localStorage.removeItem("teams");
@@ -196,17 +199,14 @@ const MainGame = () => {
       <div className="buttons">
         {timerRunning && (
           <button
-            onClick={() => {
-              setTimerRunning(false);
-              if (audioRef.current) audioRef.current.pause();
-            }}
+            onClick={() => setTimerRunning(false)}
           >
             ⏸ توقف تایمر
           </button>
         )}
 
         {!timerRunning && !askLastCard && (
-          <button onClick={() => startTimer()}>
+          <button onClick={startTimer}>
             {timeLeft === 0
               ? `شروع تیم ${teams[currentTeamIndex].name}`
               : "شروع تایمر ⏯"}

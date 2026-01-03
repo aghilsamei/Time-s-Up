@@ -61,6 +61,15 @@ registerRoute(
   })
 );
 
+registerRoute(
+  ({ request }) => request.destination === 'audio',
+  new StaleWhileRevalidate({
+    cacheName: 'audio-cache',
+    plugins: [new ExpirationPlugin({ maxEntries: 10 })],
+  })
+);
+
+
 // This allows the web app to trigger skipWaiting via
 // registration.waiting.postMessage({type: 'SKIP_WAITING'})
 self.addEventListener('message', (event) => {
