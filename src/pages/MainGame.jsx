@@ -19,7 +19,8 @@ const MainGame = () => {
 
   // بارگذاری اولیه فایل صدا
   useEffect(() => {
-    audioRef.current = new Audio("/sounds/timer.mp3");
+    audioRef.current = new Audio(process.env.PUBLIC_URL + "/sounds/timer.mp3");
+
     audioRef.current.loop = true;
   }, []);
 
