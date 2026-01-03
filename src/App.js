@@ -21,48 +21,11 @@ const App = () => {
 
     return () => clearInterval(interval);
   }, [phase]);
-
-
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showInstall, setShowInstall] = useState(false);
-
-  useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault(); // جلوگیری از popup پیش‌فرض
-      setDeferredPrompt(e);
-      setShowInstall(true); // نمایش دکمه نصب
-    };
-
-    window.addEventListener("beforeinstallprompt", handler);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-    };
-  }, []);
-
-    const handleInstall = async () => {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    const choice = await deferredPrompt.userChoice;
-
-    if (choice.outcome === "accepted") {
-      console.log("User accepted the install");
-    }
-
-    setDeferredPrompt(null);
-    setShowInstall(false);
-  };
-
+  
 
   return (
     <>
 
-      {showInstall && (
-        <button onClick={handleInstall} style={{ position: "fixed", bottom: 20 }}>
-          نصب برنامه
-        </button>
-      )}
       {phase === "setup" && <Setup />}
       {phase === "selection" && <PlayerCardSelection />}
       {phase === "main_game" && <MainGame />}
