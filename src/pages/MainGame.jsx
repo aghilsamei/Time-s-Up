@@ -74,23 +74,28 @@ const MainGame = () => {
   }, [timerRunning]);
 
   // شروع تایمر با تعامل کاربر
-  const startTimer = () => {
-    if (timerRunning) return;
+ const startTimer = () => {
+  if (timerRunning) return;
 
-    const gameSettings = JSON.parse(localStorage.getItem("game_settings")) || { roundTime: 60 };
-    if (timeLeft === 0) setTimeLeft(gameSettings.roundTime);
+  const gameSettings = JSON.parse(localStorage.getItem("game_settings")) || { roundTime: 60 };
+  if (timeLeft === 0) setTimeLeft(gameSettings.roundTime);
 
-    setTimerRunning(true);
-    setAskLastCard(false);
+  setTimerRunning(true);
+  setAskLastCard(false);
 
-    // 🔊 پخش صدا
-    if (audioRef.current) {
-      audioRef.current.loop = true;
-      audioRef.current.play().then(() => {
-        audioRef.current.currentTime = 0; // شروع از ثانیه 0 یا هر ثانیه دلخواه
-      }).catch((err) => console.log("پخش صدا بلاک شد:", err));
-    }
-  };
+  // 🔊 حتما با تعامل کاربر
+  if (audioRef.current) {
+    audioRef.current.loop = true;
+    audioRef.current.currentTime = 0;
+
+    // play با catch برای بلاک شدن
+    audioRef.current.play().catch((err) => {
+      console.log("پخش صدا بلاک شد:", err);
+      alert("برای پخش صدا، لطفا یکبار روی دکمه تایمر کلیک کن!");
+    });
+  }
+};
+
 
   // کارت بعدی
   const nextCard = (correct = true) => {
