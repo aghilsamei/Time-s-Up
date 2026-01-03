@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "/aghilsamei/Time-s-Up/static/css/main.73b3dee4.css",
+    "main.js": "/aghilsamei/Time-s-Up/static/js/main.59c765a2.js",
+    "service-worker.js": "/aghilsamei/Time-s-Up/service-worker.js",
+    "index.html": "/aghilsamei/Time-s-Up/index.html",
+    "main.73b3dee4.css.map": "/aghilsamei/Time-s-Up/static/css/main.73b3dee4.css.map",
+    "main.59c765a2.js.map": "/aghilsamei/Time-s-Up/static/js/main.59c765a2.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.73b3dee4.css",
+    "static/js/main.59c765a2.js"
+  ]
+}
