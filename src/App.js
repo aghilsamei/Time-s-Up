@@ -4,6 +4,7 @@ import Setup from "./pages/Setup";
 import PlayerCardSelection from "./pages/PlayerCardSelection";
 import MainGame from "./pages/MainGame";
 import Score from "./pages/Score";
+import Start from "./pages/Start";
 
 const App = () => {
   const [phase, setPhase] = useState(
@@ -26,6 +27,7 @@ const App = () => {
   return (
     <>
 
+      {phase === "start" && <Start/>}
       {phase === "setup" && <Setup />}
       {phase === "selection" && <PlayerCardSelection />}
       {phase === "main_game" && <MainGame />}

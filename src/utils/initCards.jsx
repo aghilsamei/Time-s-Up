@@ -27,7 +27,7 @@ export const initDatabase = () => {
       "game_state",
       JSON.stringify({
         round: 1,
-        phase: "setup",
+        phase: "start",
         currentPlayer: 0,
         currentTeam: 0,
         players: [],

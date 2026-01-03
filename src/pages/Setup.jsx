@@ -94,7 +94,7 @@ const Setup = () => {
       "game_state",
       JSON.stringify({
         round: 1,
-        phase: "setup",
+        phase: "start",
       })
     );
 

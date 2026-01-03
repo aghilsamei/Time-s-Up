@@ -1,0 +1,136 @@
+/* صفحه شروع */
+.start-page {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #2a0845, #120018);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-family: "Vazir", sans-serif;
+  overflow: hidden;
+}
+
+li{
+    list-style: none;
+}
+
+/* عنوان بازی */
+.game-title {
+  font-size: 3rem;
+  margin-bottom: 10px;
+  text-shadow: 0 0 20px #bb86fc;
+}
+
+.game-subtitle {
+  font-size: 1.2rem;
+  margin-bottom: 40px;
+  opacity: 0.85;
+}
+
+/* دکمه شروع */
+.start-game-btn {
+  padding: 18px 60px;
+  font-size: 1.5rem;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  background: linear-gradient(135deg, #bb86fc, #7f39fb);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(187, 134, 252, 0.5);
+  transition: all 0.25s ease;
+}
+
+.start-game-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 15px 40px rgba(187, 134, 252, 0.8);
+}
+
+/* آیکون آموزش */
+.help-icon {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 1.8rem;
+  background: #1f1f1f;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(255,255,255,0.2);
+  transition: all 0.2s;
+}
+
+.help-icon:hover {
+  background: #bb86fc;
+  color: #000;
+}
+
+/* مودال */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal {
+  background: #1e1e1e;
+  border-radius: 20px;
+  padding: 25px 30px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 0 30px rgba(187,134,252,0.6);
+  animation: pop 0.25s ease;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modal h2 {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.modal ul {
+  padding-left: 20px;
+  margin-bottom: 20px;
+}
+
+.modal li {
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+/* دکمه بستن */
+.close-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 14px;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #03dac6, #00bfa5);
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.close-btn:hover {
+  transform: scale(1.05);
+}
