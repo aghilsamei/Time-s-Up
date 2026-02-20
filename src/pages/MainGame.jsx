@@ -1,309 +1,231 @@
-// pages/MainGame.jsx
 import React, { useState, useEffect, useRef } from "react";
-import "../assets/css/mainGame.css"; 
+import "../assets/css/mainGame.css";
 import { setGamePhase } from "../utils/setupHandlers";
 
 const MainGame = () => {
   const [players, setPlayers] = useState([]);
   const [teams, setTeams] = useState([]);
   const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
-  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
-  const [cards, setCards] = useState([]);
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
-  const [askLastCard, setAskLastCard] = useState(false); // ⚡ اضافه شد
+  const [teamStarted, setTeamStarted] = useState(false);
+  const [remainingCards, setRemainingCards] = useState([]);
+  const [lang, setLang] = useState("fa");
+
   const timerRef = useRef(null);
-  const [remainingCards, setRemainingCards] = useState([]); // ⚡ کارت‌های باقی‌مانده کل دور
-
+  const correctSoundRef = useRef(null);
   const audioRef = useRef(null);
-  const [audioStarted, setAudioStarted] = useState(false); // ⚡ برای شروع اولیه آهنگ از ثانیه 3
+  const [audioStarted, setAudioStarted] = useState(false);
 
+  useEffect(() => {
+    const settings = JSON.parse(localStorage.getItem("game_settings")) || {};
+    const currentLang = settings.language || "fa";
+    setLang(currentLang);
+    document.documentElement.dir = currentLang === "fa" ? "rtl" : "ltr";
 
+    correctSoundRef.current = new Audio(process.env.PUBLIC_URL + "/sounds/correct.mp3");
+    audioRef.current = new Audio(process.env.PUBLIC_URL + "/sounds/timer.mp3");
+    audioRef.current.loop = true;
 
-useEffect(() => {
-  audioRef.current = new Audio(process.env.PUBLIC_URL + "/sounds/timer.mp3")
+    const storedPlayers = JSON.parse(localStorage.getItem("players")) || [];
+    const storedTeams = JSON.parse(localStorage.getItem("teams")) || [];
+    setPlayers(storedPlayers);
+    setTeams(storedTeams);
 
-  audioRef.current.loop = true; // تکرار آهنگ
-}, []);
+    // جمع کردن همه کارت‌ها و shuffle
+    const allCards = storedPlayers.flatMap((p) => p.givenCards).sort(() => 0.5 - Math.random());
+    setRemainingCards(allCards);
 
-// کنترل پخش آهنگ با تایمر
-useEffect(() => {
-  if (!audioRef.current) return;
+    const gameSettings = JSON.parse(localStorage.getItem("game_settings")) || {};
+    setTimeLeft(gameSettings.roundTime || 30);
+  }, []);
 
-  if (timerRunning) {
-    if (!audioStarted) {
-      audioRef.current.currentTime = 4; // فقط بار اول از ثانیه 3 شروع کن
-      setAudioStarted(true);
-    }
-    audioRef.current.play();
-  } else {
-    audioRef.current.pause();
-  }
-}, [timerRunning]);
-// پاکسازی هنگام خروج از صفحه
-useEffect(() => {
-  return () => {
-    if (audioRef.current) {
+  useEffect(() => {
+    localStorage.setItem("remaining_cards", JSON.stringify(remainingCards));
+  }, [remainingCards]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (timerRunning) {
+      if (!audioStarted) {
+        audioRef.current.currentTime = 4;
+        setAudioStarted(true);
+      }
+      audioRef.current.play().catch(() => {});
+    } else {
       audioRef.current.pause();
-      audioRef.current.currentTime = 0;
     }
-  };
-}, []);
-
- useEffect(() => {
-  const storedPlayers = JSON.parse(localStorage.getItem("players")) || [];
-  const storedTeams = JSON.parse(localStorage.getItem("teams")) || [];
-  const gameSettings = JSON.parse(localStorage.getItem("game_settings")) || {};
-
-  setPlayers(storedPlayers);
-  setTeams(storedTeams);
-
-  // همه کارت‌ها جمع‌آوری و shuffle می‌شوند
-  const allCards = storedPlayers.flatMap(p => p.givenCards).sort(() => 0.5 - Math.random());
-  setRemainingCards(allCards);
-  setCards([allCards[0]]); // کارت اول برای شروع نمایش داده می‌شود
-  setCurrentCardIndex(0);
-  setTimeLeft(gameSettings.roundTime);
-}, []);
+  }, [timerRunning]);
 
   useEffect(() => {
     if (timerRunning && timeLeft > 0) {
-      timerRef.current = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      timerRef.current = setTimeout(() => {
+        setTimeLeft(timeLeft - 1);
+        if (navigator.vibrate) {
+          if (timeLeft === 3 || timeLeft === 2) navigator.vibrate(120);
+          if (timeLeft === 1) navigator.vibrate([200, 100, 200]);
+        }
+      }, 1000);
     } else if (timeLeft === 0 && timerRunning) {
       setTimerRunning(false);
-      setAskLastCard(true); // ⚡ وقتی تایمر تموم شد، دیالوگ نمایش داده شود
+      if (navigator.vibrate) navigator.vibrate([400, 150, 400]);
+      nextTeam();
     }
     return () => clearTimeout(timerRef.current);
   }, [timeLeft, timerRunning]);
 
- const startTimer = () => {
-  if (timerRunning) return;
+  const startTimer = () => {
+    if (timerRunning) return;
+    const gameSettings = JSON.parse(localStorage.getItem("game_settings")) || {};
+    if (timeLeft === 0) setTimeLeft(gameSettings.roundTime || 30);
 
-  const gameSettings = JSON.parse(localStorage.getItem("game_settings")) || { roundTime: 60 };
-  if (timeLeft === 0) setTimeLeft(gameSettings.roundTime);
+    setTimerRunning(true);
+    setTeamStarted(true);
+    if (audioRef.current) {
+      audioRef.current.loop = true;
+      if (!audioStarted) {
+        audioRef.current.currentTime = 3;
+        setAudioStarted(true);
+      }
+      audioRef.current.play().catch(() =>
+        alert(lang === "fa"
+          ? "برای پخش صدا، لطفا یکبار روی دکمه تایمر کلیک کن!"
+          : "To play sound, please click the timer button once!"
+        )
+      );
+    }
+  };
 
-  setTimerRunning(true);
-  setAskLastCard(false);
-
-  // 🔊 حتما با تعامل کاربر
-  if (audioRef.current) {
-    audioRef.current.loop = true;
-    audioRef.current.currentTime = 3;
-
-    // play با catch برای بلاک شدن
-    audioRef.current.play().catch((err) => {
-      console.log("پخش صدا بلاک شد:", err);
-      alert("برای پخش صدا، لطفا یکبار روی دکمه تایمر کلیک کن!");
-    });
-  }
-};
-
-
-// اضافه کردن تابع skipCard
-const skipCard = () => {
-  if (remainingCards.length > 1) {
-    const newRemaining = [...remainingCards];
-    const current = newRemaining.shift(); // کارت فعلی برداشته شود
-    newRemaining.push(current); // کارت فعلی به آخر اضافه شود
-
-    // 🔀 shuffle کل کارت‌ها
-    const shuffled = newRemaining.sort(() => 0.5 - Math.random());
-
-    setRemainingCards(shuffled);
-    setCurrentCardIndex(0); // کارت اول جدید نمایش داده شود
-  }
-};
-
-
-
-
-  
-const nextCard = (correct = true) => {
-  const updatedTeams = [...teams];
-  if (correct) updatedTeams[currentTeamIndex].score += 1;
-  setTeams(updatedTeams);
-  localStorage.setItem("teams", JSON.stringify(updatedTeams));
-
-  const newRemaining = remainingCards.slice(1); // کارت فعلی برداشته شد
-  setRemainingCards(newRemaining);
-
-  if (newRemaining.length > 0) {
-    setCards([newRemaining[0]]); // کارت بعدی نمایش داده شود
-    setCurrentCardIndex(0);
-  } else {
-    // تمام کارت‌ها بازی شدند → پایان دور
-    setTimerRunning(false);
-    setAskLastCard(false);
-    alert("تمام کارت‌های دور بازی تمام شد! امتیازات نمایش داده می‌شود.");
-    setGamePhase("score"); // وارد صفحه امتیازات شو
-  }
-};
-
-
-const handleLastCardAnswer = (said) => {
-  let newRemaining = [...remainingCards];
-  const updatedTeams = [...teams];
-
-  if (said) {
-    // امتیاز بده
-    updatedTeams[currentTeamIndex].score += 1;
+  const nextCard = (correct = true) => {
+    const updatedTeams = [...teams];
+    if (correct) updatedTeams[currentTeamIndex].score += 1;
     setTeams(updatedTeams);
     localStorage.setItem("teams", JSON.stringify(updatedTeams));
 
-    // کارت فعلی حذف شود
-    newRemaining.shift();
-  }
+    const newRemaining = remainingCards.slice(1);
+    setRemainingCards(newRemaining);
 
-  // در هر دو حالت کارت‌ها shuffle شوند
-  newRemaining = newRemaining.sort(() => 0.5 - Math.random());
-  setRemainingCards(newRemaining);
+    if (correct && correctSoundRef.current) {
+      correctSoundRef.current.currentTime = 0;
+      correctSoundRef.current.play().catch(() => {});
+    }
 
-  setAskLastCard(false);
-  setTimerRunning(false);
+    if (newRemaining.length === 0) {
+      setTimerRunning(false);
+      alert(
+        lang === "fa"
+          ? "تمام کارت‌های دور بازی تمام شد! امتیازات نمایش داده می‌شود."
+          : "All round cards are finished! Scores will be displayed."
+      );
+      setGamePhase("score");
+    }
+  };
 
-  // اگر کارت‌ها تمام شدند → پایان بازی
-  if (newRemaining.length === 0) {
-    alert("تمام کارت‌های دور بازی تمام شد!");
-    setGamePhase("score");
-    return;
-  }
+  const skipCard = () => {
+    if (remainingCards.length > 1) {
+      const newRemaining = [...remainingCards];
+      const current = newRemaining.shift();
+      newRemaining.push(current);
+      setRemainingCards(newRemaining.sort(() => 0.5 - Math.random()));
+    }
+  };
 
-  nextTeam();
-};
+  const nextTeam = () => {
+    const nextIndex = (currentTeamIndex + 1) % teams.length;
+    setRemainingCards([...remainingCards].sort(() => 0.5 - Math.random()));
+    setCurrentTeamIndex(nextIndex);
+    // setCurrentCardIndex(0);
+    setTimeLeft(0);
+    setTimerRunning(false);
+    setAudioStarted(false);
+    setTeamStarted(false);
+  };
 
+  const endGame = () => {
+    if (!window.confirm(lang === "fa" ? "آیا مطمئنی می‌خوای بازی رو به طور کامل تموم کنی؟" : "Are you sure you want to end the game?")) return;
 
-const nextTeam = () => {
-  const nextIndex = (currentTeamIndex + 1) % teams.length;
-  setCurrentTeamIndex(nextIndex);
-  setCurrentCardIndex(0);
-  setTimerRunning(false);
+    localStorage.removeItem("players");
+    localStorage.removeItem("teams");
+    localStorage.removeItem("game_settings");
+    localStorage.removeItem("remaining_cards");
+    localStorage.setItem("game_state", JSON.stringify({ round: 1, phase: "start" }));
+    window.location.reload();
+  };
 
-};
-
-
-const startNextRound = () => {
-  // همه کارت‌ها دوباره shuffle شوند
-  const allCards = players.flatMap(p => p.givenCards).sort(() => 0.5 - Math.random());
-  setRemainingCards(allCards);
-  setCards([allCards[0]]);
-  setCurrentTeamIndex(0);
-  setCurrentCardIndex(0);
-  setTimerRunning(false);
-};
-
-const endGame = () => {
-  const confirmEnd = window.confirm("آیا مطمئنی می‌خوای بازی رو به طور کامل تموم کنی؟");
-
-  if (!confirmEnd) return;
-
-  // پاک کردن کل بازی
-  localStorage.removeItem("players");
-  localStorage.removeItem("teams");
-  localStorage.removeItem("game_settings");
-  localStorage.removeItem("remaining_cards");
-
-  // ریست game_state
-  localStorage.setItem(
-    "game_state",
-    JSON.stringify({
-      round: 1,
-      phase: "start",
-    })
-  );
-
-  window.location.reload();
-};
-
-
-
-
-  if (players.length === 0 || teams.length === 0) return <div>در حال بارگذاری...</div>;
+  if (players.length === 0 || teams.length === 0)
+    return <div>{lang === "fa" ? "در حال بارگذاری..." : "Loading..."}</div>;
 
   return (
     <div className="main-game-container">
       <h2 className="current-team">
-  🎯 تیم فعلی: <span>{teams[currentTeamIndex].name}</span>
-</h2>
-
+        🎯 {lang === "fa" ? "تیم فعلی" : "Current Team"}: <span>{teams[currentTeamIndex].name}</span>
+      </h2>
 
       <div className={`timer ${timeLeft <= 10 ? "danger" : ""}`}>
-  ⏱ {timeLeft} ثانیه
-</div>
+        ⏱ {timeLeft} {lang === "fa" ? "ثانیه" : "seconds"}
+      </div>
 
-
-    {remainingCards.length > 0 && (
- <div className="card neon">
-  <div className="card-title">{remainingCards[0].title}</div>
-  <div className="card-category">{remainingCards[0].category}</div>
-</div>
-
-)}
-
+      {remainingCards.length > 0 && (
+        <div className={`card neon ${!timerRunning ? "card-blur" : ""}`}>
+          <div className="card-title">
+            {timerRunning
+              ? lang === "fa"
+                ? remainingCards[0].title_fa
+                : remainingCards[0].title_en
+              : lang === "fa"
+              ? "🔒 کارت مخفی"
+              : "🔒 Hidden Card"}
+          </div>
+          <div className="card-category">
+            {timerRunning
+              ? lang === "fa"
+                ? remainingCards[0].category.fa
+                : remainingCards[0].category.en
+              : ""}
+          </div>
+        </div>
+      )}
 
       <div className="buttons">
         {timerRunning && (
           <>
-            <button onClick={() => nextCard(true)}>درست</button>
-
-             {/* دکمه توقف */}
-      <button onClick={() => setTimerRunning(false)}>⏸ توقف تایمر</button>
+            <button className="btn-correct" onClick={() => nextCard(true)}>
+              {lang === "fa" ? "✅ درست" : "✅ Correct"}
+            </button>
+            <button onClick={() => setTimerRunning(!timerRunning)}>
+              {timerRunning ? (lang === "fa" ? "⏸ توقف" : "⏸ Pause") : (lang === "fa" ? "▶️ ادامه" : "▶️ Resume")}
+            </button>
           </>
         )}
 
-      {!timerRunning && !askLastCard && (
-  <button onClick={() => startTimer()}>
-    {timeLeft === 0
-      ? `شروع تیم ${teams[currentTeamIndex].name}` // تایمر هنوز شروع نشده یا تیم عوض شده
-      : "شروع تایمر ⏯"} 
-  </button>
-)}
+        {!timerRunning && <button onClick={startTimer}>
+          {lang === "fa" ? `▶️ تیم ${teams[currentTeamIndex].name}` : `▶️ Team ${teams[currentTeamIndex].name}`}
+        </button>}
 
-  {/* ⚡ فقط در دور 2 و 3 */}
-      {(() => {
-        const gameState = JSON.parse(localStorage.getItem("game_state")) || { round: 1 };
-        if ( timerRunning && gameState.round > 1) {
-          return <button onClick={skipCard}>⏭ رد کردن کارت</button>;
-        }
-        return null;
-      })()}
-
-
-        {askLastCard && (
-          <div style={{ marginTop: "15px" }}>
-            <p>آیا آخرین کارت گفته شد؟</p>
-            <button onClick={() => handleLastCardAnswer(true)}>بله</button>
-            <button onClick={() =>{
-              handleLastCardAnswer(false)
-            } }>خیر</button>
-          </div>
-        )}
-
-        {/* {!timerRunning && currentCardIndex >= cards.length - 1 && !askLastCard && (
-          <button onClick={nextTeam}>شروع تیم بعدی</button>
-        )} */}
+        {(() => {
+          const gameState = JSON.parse(localStorage.getItem("game_state")) || { round: 1 };
+          if (timerRunning && gameState.round > 1) {
+            return <button onClick={skipCard}>{lang === "fa" ? "⏭ رد کردن کارت" : "⏭ Skip Card"}</button>;
+          }
+          return null;
+        })()}
       </div>
 
       <div className="scores">
-  <h3>📊 امتیاز تیم‌ها</h3>
-  {teams.map((team, i) => (
-    <div
-      key={team.id}
-      className={`score-row ${i === currentTeamIndex ? "active" : ""}`}
-    >
-      <span>{team.name}</span>
-      <span>{team.score}</span>
-    </div>
-  ))}
-</div>
+        <h3>{lang === "fa" ? "📊 امتیاز تیم‌ها" : "📊 Teams Scores"}</h3>
+        {teams.map((team, i) => (
+          <div key={team.id} className={`score-row ${i === currentTeamIndex ? "active" : ""}`}>
+            <span>{team.name}</span>
+            <span>{team.score}</span>
+          </div>
+        ))}
+      </div>
 
-<div className="end-game">
-  <button className="end-btn" onClick={endGame}>
-    ⛔ پایان بازی
-  </button>
-</div>
-
-
+      <div className="end-game">
+        <button className="end-btn" onClick={endGame}>
+          {lang === "fa" ? "⛔ پایان بازی" : "⛔ End Game"}
+        </button>
+      </div>
     </div>
   );
 };

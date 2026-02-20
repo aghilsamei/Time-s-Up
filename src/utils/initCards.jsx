@@ -1,4 +1,3 @@
-//utils/initCards
 import cards from "../data/cards.json";
 
 export const initDatabase = () => {
@@ -16,10 +15,16 @@ export const initDatabase = () => {
         cardsPerPlayer: 7,
         removePerPlayer: 2,
         roundTime: 36,
-        categories: []
+        categories: [],
+        language: "fa" // 🌍 زبان پیش‌فرض
       })
     );
   }
+
+  // 👇 همیشه جهت صفحه رو بر اساس زبان تنظیم کن
+  const settings = JSON.parse(localStorage.getItem("game_settings"));
+  const lang = settings?.language || "fa";
+  document.documentElement.dir = lang === "fa" ? "rtl" : "ltr";
 
   // 3️⃣ وضعیت بازی
   if (!localStorage.getItem("game_state")) {

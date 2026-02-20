@@ -5,11 +5,15 @@ import PlayerCardSelection from "./pages/PlayerCardSelection";
 import MainGame from "./pages/MainGame";
 import Score from "./pages/Score";
 import Start from "./pages/Start";
+import { initDatabase } from "./utils/initCards";
 
 const App = () => {
   const [phase, setPhase] = useState(
     JSON.parse(localStorage.getItem("game_state"))?.phase || "start"
   );
+
+
+initDatabase(); // حتما قبل از render کردن کامپوننت Setup
 
   // هر 200ms بررسی کن phase تو localStorage تغییر کرده؟
   useEffect(() => {

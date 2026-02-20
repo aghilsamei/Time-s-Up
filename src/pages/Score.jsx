@@ -5,12 +5,38 @@ import "../assets/css/score.css";
 
 const Score = () => {
   const [round, setRound] = useState(1);
+  const [lang, setLang] = useState("fa");
   const teams = JSON.parse(localStorage.getItem("teams")) || [];
   const players = JSON.parse(localStorage.getItem("players")) || [];
 
-  const maxScore = Math.max(...teams.map(t => t.score), 0);
+  const maxScore = Math.max(...teams.map((t) => t.score), 0);
+
+  // ترجمه‌ها
+  const t = {
+    fa: {
+      endRound: "🏁 پایان دور",
+      nextRound: "🚀 شروع دور بعدی",
+      endGame: "⛔ پایان بازی",
+      gameOver: "🎉 بازی به پایان رسید!",
+      winners: "🏆 تیم برنده",
+      confirmEnd: "آیا مطمئنی می‌خوای بازی رو به طور کامل تموم کنی؟",
+      and: " و ",
+    },
+    en: {
+      endRound: "🏁 Round End",
+      nextRound: "🚀 Start Next Round",
+      endGame: "⛔ End Game",
+      gameOver: "🎉 Game Over!",
+      winners: "🏆 Winning Team",
+      confirmEnd: "Are you sure you want to end the game?",
+      and: " & ",
+    },
+  };
 
   useEffect(() => {
+    const settings = JSON.parse(localStorage.getItem("game_settings")) || {};
+    setLang(settings.language || "fa");
+
     const gameState = JSON.parse(localStorage.getItem("game_state")) || {};
     setRound(gameState.round || 1);
   }, []);
@@ -20,9 +46,12 @@ const Score = () => {
     const newRound = (gameState.round || 1) + 1;
 
     if (newRound > 3) {
-      alert("🎉 بازی به پایان رسید!");
-      const winners = teams.filter(t => t.score === maxScore).map(t => t.name).join(" و ");
-      alert(`🏆 تیم برنده: ${winners}`);
+      alert(t[lang].gameOver);
+      const winners = teams
+        .filter((t) => t.score === maxScore)
+        .map((t) => t.name)
+        .join(t[lang].and);
+      alert(`${t[lang].winners}: ${winners}`);
       endGame();
       return;
     }
@@ -31,7 +60,7 @@ const Score = () => {
     localStorage.setItem("game_state", JSON.stringify(gameState));
 
     const allCards = players
-      .flatMap(p => p.givenCards)
+      .flatMap((p) => p.givenCards)
       .sort(() => 0.5 - Math.random());
 
     localStorage.setItem("remaining_cards", JSON.stringify(allCards));
@@ -40,7 +69,7 @@ const Score = () => {
   };
 
   const endGame = () => {
-    const confirmEnd = window.confirm("آیا مطمئنی می‌خوای بازی رو به طور کامل تموم کنی؟");
+    const confirmEnd = window.confirm(t[lang].confirmEnd);
     if (!confirmEnd) return;
 
     // پاک کردن کل بازی
@@ -65,10 +94,12 @@ const Score = () => {
   return (
     <div className="score-page">
       <div className="score-card">
-        <h2>🏁 پایان دور {round}</h2>
+        <h2>
+          {t[lang].endRound} {round}
+        </h2>
 
         <div className="team-scores">
-          {teams.map(team => (
+          {teams.map((team) => (
             <div
               key={team.id}
               className={`team-row ${
@@ -83,13 +114,13 @@ const Score = () => {
 
         {round < 3 && (
           <button className="next-round-btn" onClick={startNextRound}>
-            🚀 شروع دور بعدی
+            {t[lang].nextRound}
           </button>
         )}
 
         <div className="end-game">
           <button className="end-btn" onClick={endGame}>
-            ⛔ پایان بازی
+            {t[lang].endGame}
           </button>
         </div>
       </div>
