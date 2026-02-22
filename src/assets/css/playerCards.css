@@ -104,3 +104,64 @@
   transform: translateY(-2px) scale(1.03);
   box-shadow: 0 10px 28px rgba(255, 77, 77, 0.65);
 }
+
+/* ===== Privacy Cover ===== */
+
+.privacy-cover {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.cover-box {
+  background: #1e1e1e;
+  padding: 40px 30px;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+  animation: fadeInScale 0.35s ease;
+}
+
+.cover-box h3 {
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+}
+
+.cover-box p {
+  color: #bbb;
+  margin-bottom: 25px;
+}
+
+.reveal-btn {
+  background: linear-gradient(135deg, #6200ee, #7e3ff2);
+  border: none;
+  color: white;
+  padding: 14px 28px;
+  border-radius: 14px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.reveal-btn:hover {
+  transform: scale(1.05);
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

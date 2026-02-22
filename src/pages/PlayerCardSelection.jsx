@@ -9,8 +9,12 @@ const PlayerCardSelection = () => {
   const [playerCards, setPlayerCards] = useState([]);
   const [selectedToRemove, setSelectedToRemove] = useState([]);
   const [remainingDeck, setRemainingDeck] = useState([]);
+  const [isCoverVisible, setIsCoverVisible] = useState(true);
   const [lang, setLang] = useState("fa");
 
+  // ===============================
+  // INIT
+  // ===============================
   useEffect(() => {
     const settings = JSON.parse(localStorage.getItem("game_settings")) || {};
     const currentLang = settings.language || "fa";
@@ -21,17 +25,24 @@ const PlayerCardSelection = () => {
     setPlayers(storedPlayers);
 
     const initialDeck = allCards.filter((c) =>
-      settings.categories.includes(c.category[currentLang])
+      settings.categories?.includes(c.category[currentLang])
     );
+
     setRemainingDeck(initialDeck);
 
     if (storedPlayers.length > 0 && settings.cardsPerPlayer) {
-      const { cards, newDeck } = pickRandomCards(settings.cardsPerPlayer, initialDeck);
+      const { cards, newDeck } = pickRandomCards(
+        settings.cardsPerPlayer,
+        initialDeck
+      );
       setPlayerCards(cards);
       setRemainingDeck(newDeck);
     }
   }, []);
 
+  // ===============================
+  // RANDOM PICK
+  // ===============================
   const pickRandomCards = (count, deck) => {
     const shuffled = [...deck].sort(() => 0.5 - Math.random());
     const cards = shuffled.slice(0, count);
@@ -39,10 +50,15 @@ const PlayerCardSelection = () => {
     return { cards, newDeck };
   };
 
+  // ===============================
+  // TOGGLE CARD
+  // ===============================
   const toggleCard = (card) => {
     const settings = JSON.parse(localStorage.getItem("game_settings"));
     const alreadySelected = selectedToRemove.includes(card);
-    if (!alreadySelected && selectedToRemove.length >= settings.removePerPlayer) return;
+
+    if (!alreadySelected && selectedToRemove.length >= settings.removePerPlayer)
+      return;
 
     if (alreadySelected) {
       setSelectedToRemove(selectedToRemove.filter((c) => c !== card));
@@ -51,8 +67,12 @@ const PlayerCardSelection = () => {
     }
   };
 
+  // ===============================
+  // CONFIRM
+  // ===============================
   const confirmSelection = () => {
     const settings = JSON.parse(localStorage.getItem("game_settings"));
+
     if (selectedToRemove.length !== settings.removePerPlayer) {
       alert(
         lang === "fa"
@@ -63,6 +83,7 @@ const PlayerCardSelection = () => {
     }
 
     const updatedPlayers = [...players];
+
     updatedPlayers[currentPlayerIndex].removedCards = selectedToRemove;
     updatedPlayers[currentPlayerIndex].givenCards = playerCards.filter(
       (c) => !selectedToRemove.includes(c)
@@ -72,13 +93,19 @@ const PlayerCardSelection = () => {
     setPlayers(updatedPlayers);
 
     const nextIndex = currentPlayerIndex + 1;
+
     if (nextIndex < updatedPlayers.length) {
       setCurrentPlayerIndex(nextIndex);
-      const settings = JSON.parse(localStorage.getItem("game_settings"));
-      const { cards, newDeck } = pickRandomCards(settings.cardsPerPlayer, remainingDeck);
+
+      const { cards, newDeck } = pickRandomCards(
+        settings.cardsPerPlayer,
+        remainingDeck
+      );
+
       setPlayerCards(cards);
       setRemainingDeck(newDeck);
       setSelectedToRemove([]);
+      setIsCoverVisible(true); // ⭐ مهم برای بازیکن بعدی
     } else {
       setGamePhase("main_game");
       alert(
@@ -89,12 +116,16 @@ const PlayerCardSelection = () => {
     }
   };
 
+  // ===============================
+  // END GAME
+  // ===============================
   const endGame = () => {
     const confirmEnd = window.confirm(
       lang === "fa"
         ? "آیا مطمئنی می‌خوای بازی رو به طور کامل تموم کنی؟"
         : "Are you sure you want to end the game completely?"
     );
+
     if (!confirmEnd) return;
 
     localStorage.removeItem("players");
@@ -110,48 +141,97 @@ const PlayerCardSelection = () => {
     window.location.reload();
   };
 
-  if (players.length === 0)
-    return <div>{lang === "fa" ? "هیچ بازیکنی پیدا نشد!" : "No players found!"}</div>;
+  // ===============================
+  // EMPTY STATE
+  // ===============================
+  if (players.length === 0) {
+    return (
+      <div>
+        {lang === "fa" ? "هیچ بازیکنی پیدا نشد!" : "No players found!"}
+      </div>
+    );
+  }
 
   const settings = JSON.parse(localStorage.getItem("game_settings"));
 
+  // ===============================
+  // RENDER
+  // ===============================
   return (
     <div className="player-container">
-      <h2>
-        {lang === "fa"
-          ? `بازیکن ${players[currentPlayerIndex].name} کارت‌های خود را انتخاب کنید`
-          : `Player ${players[currentPlayerIndex].name}, select your cards`}
-      </h2>
+      {/* ================= COVER ================= */}
+      {isCoverVisible && (
+        <div className="privacy-cover">
+          <div className="cover-box">
+            <h3>
+              {lang === "fa"
+                ? `نوبت ${players[currentPlayerIndex].name}`
+                : `${players[currentPlayerIndex].name}'s turn`}
+            </h3>
 
-      <div className="info">
-        {lang === "fa"
-          ? `تعداد کارت‌های قابل حذف باقی‌مانده: ${
-              settings.removePerPlayer - selectedToRemove.length
-            }`
-          : `Remaining removable cards: ${
-              settings.removePerPlayer - selectedToRemove.length
-            }`}
-      </div>
+            <p>
+              {lang === "fa"
+                ? "دیگران نگاه نکنند! فقط بازیکن فعلی ادامه دهد."
+                : "Others look away! Only current player continue."}
+            </p>
 
-      <div className="cards-grid">
-        {playerCards.map((card, idx) => (
-          <div
-            key={idx}
-            className={`card ${selectedToRemove.includes(card) ? "selected" : ""}`}
-            onClick={() => toggleCard(card)}
-          >
-            <div>{lang === "fa" ? card.title_fa : card.title_en}</div>
-            <div style={{ fontSize: "0.8rem", color: "#aaa" }}>
-              {lang === "fa" ? card.category.fa : card.category.en}
-            </div>
+            <button
+              className="reveal-btn"
+              onClick={() => setIsCoverVisible(false)}
+            >
+              {lang === "fa" ? "👁 مشاهده کارت‌ها" : "👁 Reveal Cards"}
+            </button>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
-      <button className="confirm-btn" onClick={confirmSelection}>
-        {lang === "fa" ? "تایید کارت‌ها" : "Confirm Cards"}
-      </button>
+      {/* ================= GAME CONTENT ================= */}
+      {!isCoverVisible && (
+        <>
+          <h2>
+            {lang === "fa"
+              ? `بازیکن ${players[currentPlayerIndex].name} کارت‌های خود را انتخاب کنید`
+              : `Player ${players[currentPlayerIndex].name}, select your cards`}
+          </h2>
 
+          <div className="info">
+            {lang === "fa"
+              ? `تعداد کارت‌های قابل حذف باقی‌مانده: ${
+                  settings.removePerPlayer - selectedToRemove.length
+                }`
+              : `Remaining removable cards: ${
+                  settings.removePerPlayer - selectedToRemove.length
+                }`}
+          </div>
+
+          <div className="cards-grid">
+            {playerCards.map((card, idx) => (
+              <div
+                key={idx}
+                className={`card ${
+                  selectedToRemove.includes(card) ? "selected" : ""
+                }`}
+                onClick={() => toggleCard(card)}
+              >
+                <div>
+                  {lang === "fa" ? card.title_fa : card.title_en}
+                </div>
+                <div style={{ fontSize: "0.8rem", color: "#aaa" }}>
+                  {lang === "fa"
+                    ? card.category.fa
+                    : card.category.en}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button className="confirm-btn" onClick={confirmSelection}>
+            {lang === "fa" ? "تایید کارت‌ها" : "Confirm Cards"}
+          </button>
+        </>
+      )}
+
+      {/* ================= END GAME ================= */}
       <div className="end-game">
         <button className="end-btn" onClick={endGame}>
           {lang === "fa" ? "⛔ پایان بازی" : "⛔ End Game"}
