@@ -1,15 +1,35 @@
 // pages/Score.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { setGamePhase } from "../utils/setupHandlers";
 import "../assets/css/score.css";
 
 const Score = () => {
   const [round, setRound] = useState(1);
   const [lang, setLang] = useState("fa");
+
   const teams = JSON.parse(localStorage.getItem("teams")) || [];
   const players = JSON.parse(localStorage.getItem("players")) || [];
 
   const maxScore = Math.max(...teams.map((t) => t.score), 0);
+
+  // 🧠 تشخیص برنده یا مساوی
+  const winnerTeams = useMemo(
+    () => teams.filter((t) => t.score === maxScore && maxScore !== 0),
+    [teams, maxScore]
+  );
+
+  const isTie = winnerTeams.length > 1;
+
+  // 🎉 تولید کاغذ رنگی
+  const confettiPieces = useMemo(() => {
+    if (isTie || winnerTeams.length === 0) return [];
+    return Array.from({ length: 40 }).map((_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 5,
+      duration: 4 + Math.random() * 4,
+    }));
+  }, [isTie, winnerTeams.length]);
 
   // ترجمه‌ها
   const t = {
@@ -19,6 +39,7 @@ const Score = () => {
       endGame: "⛔ پایان بازی",
       gameOver: "🎉 بازی به پایان رسید!",
       winners: "🏆 تیم برنده",
+      tie: "🤝 مساوی",
       confirmEnd: "آیا مطمئنی می‌خوای بازی رو به طور کامل تموم کنی؟",
       and: " و ",
     },
@@ -28,6 +49,7 @@ const Score = () => {
       endGame: "⛔ End Game",
       gameOver: "🎉 Game Over!",
       winners: "🏆 Winning Team",
+      tie: "🤝 Tie",
       confirmEnd: "Are you sure you want to end the game?",
       and: " & ",
     },
@@ -42,15 +64,18 @@ const Score = () => {
   }, []);
 
   const startNextRound = () => {
-    let gameState = JSON.parse(localStorage.getItem("game_state")) || { round: 1 };
+    let gameState =
+      JSON.parse(localStorage.getItem("game_state")) || { round: 1 };
     const newRound = (gameState.round || 1) + 1;
 
     if (newRound > 3) {
       alert(t[lang].gameOver);
+
       const winners = teams
         .filter((t) => t.score === maxScore)
         .map((t) => t.name)
         .join(t[lang].and);
+
       alert(`${t[lang].winners}: ${winners}`);
       endGame();
       return;
@@ -72,14 +97,12 @@ const Score = () => {
     const confirmEnd = window.confirm(t[lang].confirmEnd);
     if (!confirmEnd) return;
 
-    // پاک کردن کل بازی
     localStorage.removeItem("players");
     localStorage.removeItem("teams");
     localStorage.removeItem("game_settings");
     localStorage.removeItem("remaining_cards");
     localStorage.removeItem("game_state");
 
-    // ریست game_state
     localStorage.setItem(
       "game_state",
       JSON.stringify({
@@ -93,23 +116,50 @@ const Score = () => {
 
   return (
     <div className="score-page">
+      {/* 🎉 CONFETTI */}
+      {!isTie && confettiPieces.length > 0 && (
+        <div className="confetti-container">
+          {confettiPieces.map((c) => (
+            <span
+              key={c.id}
+              className="confetti"
+              style={{
+                left: `${c.left}%`,
+                animationDelay: `${c.delay}s`,
+                animationDuration: `${c.duration}s`,
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       <div className="score-card">
         <h2>
           {t[lang].endRound} {round}
         </h2>
 
+        {/* 🏆 یا مساوی */}
+        {isTie && maxScore !== 0 && (
+          <div className="tie-text">{t[lang].tie}</div>
+        )}
+
         <div className="team-scores">
-          {teams.map((team) => (
-            <div
-              key={team.id}
-              className={`team-row ${
-                team.score === maxScore && maxScore !== 0 ? "winner" : ""
-              }`}
-            >
-              <span className="team-name">{team.name}</span>
-              <span className="team-score">{team.score}</span>
-            </div>
-          ))}
+          {teams.map((team) => {
+            const isWinner =
+              !isTie && team.score === maxScore && maxScore !== 0;
+
+            return (
+              <div
+                key={team.id}
+                className={`team-row ${isWinner ? "winner" : ""}`}
+              >
+                <span className="team-name">
+                  {team.name} {isWinner && "🏆"}
+                </span>
+                <span className="team-score">{team.score}</span>
+              </div>
+            );
+          })}
         </div>
 
         {round < 3 && (

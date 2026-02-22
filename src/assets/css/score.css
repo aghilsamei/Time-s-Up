@@ -95,3 +95,57 @@
   transform: translateY(-2px) scale(1.03);
   box-shadow: 0 10px 28px rgba(255, 77, 77, 0.65);
 }
+
+
+/* 🎉 Confetti */
+
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 5;
+}
+
+.confetti {
+  position: absolute;
+  top: -10px;
+  width: 8px;
+  height: 14px;
+  background: hsl(calc(360 * var(--i)), 90%, 60%);
+  animation: confettiFall linear infinite;
+}
+
+/* رنگ‌های مختلف */
+.confetti:nth-child(odd) {
+  background: #ff5252;
+}
+.confetti:nth-child(even) {
+  background: #ffd740;
+}
+.confetti:nth-child(3n) {
+  background: #40c4ff;
+}
+.confetti:nth-child(4n) {
+  background: #69f0ae;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0.9;
+  }
+}
+
+/* 🤝 مساوی */
+
+.tie-text {
+  margin-bottom: 15px;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #ffd54f;
+}

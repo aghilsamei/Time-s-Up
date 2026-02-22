@@ -3,6 +3,13 @@ import "../assets/css/mainGame.css";
 import { setGamePhase } from "../utils/setupHandlers";
 
 const MainGame = () => {
+
+  const getLowestScoreTeamIndex = (teamsList) => {
+  if (!teamsList.length) return 0;
+
+  const minScore = Math.min(...teamsList.map(t => t.score));
+  return teamsList.findIndex(t => t.score === minScore);
+};
   const [players, setPlayers] = useState([]);
   const [teams, setTeams] = useState([]);
   const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
@@ -17,28 +24,42 @@ const MainGame = () => {
   const audioRef = useRef(null);
   const [audioStarted, setAudioStarted] = useState(false);
 
-  useEffect(() => {
-    const settings = JSON.parse(localStorage.getItem("game_settings")) || {};
-    const currentLang = settings.language || "fa";
-    setLang(currentLang);
-    document.documentElement.dir = currentLang === "fa" ? "rtl" : "ltr";
+ useEffect(() => {
+  const settings = JSON.parse(localStorage.getItem("game_settings")) || {};
+  const currentLang = settings.language || "fa";
+  setLang(currentLang);
+  document.documentElement.dir = currentLang === "fa" ? "rtl" : "ltr";
 
-    correctSoundRef.current = new Audio(process.env.PUBLIC_URL + "/sounds/correct.mp3");
-    audioRef.current = new Audio(process.env.PUBLIC_URL + "/sounds/timer.mp3");
-    audioRef.current.loop = true;
+  correctSoundRef.current = new Audio(process.env.PUBLIC_URL + "/sounds/correct.mp3");
+  audioRef.current = new Audio(process.env.PUBLIC_URL + "/sounds/timer.mp3");
+  audioRef.current.loop = true;
 
-    const storedPlayers = JSON.parse(localStorage.getItem("players")) || [];
-    const storedTeams = JSON.parse(localStorage.getItem("teams")) || [];
-    setPlayers(storedPlayers);
-    setTeams(storedTeams);
+  const storedPlayers = JSON.parse(localStorage.getItem("players")) || [];
+  const storedTeams = JSON.parse(localStorage.getItem("teams")) || [];
+  setPlayers(storedPlayers);
+  setTeams(storedTeams);
 
-    // جمع کردن همه کارت‌ها و shuffle
-    const allCards = storedPlayers.flatMap((p) => p.givenCards).sort(() => 0.5 - Math.random());
-    setRemainingCards(allCards);
+  // ⭐⭐⭐ تعیین تیم شروع‌کننده
+  const gameState = JSON.parse(localStorage.getItem("game_state")) || { round: 1 };
 
-    const gameSettings = JSON.parse(localStorage.getItem("game_settings")) || {};
-    setTimeLeft(gameSettings.roundTime || 30);
-  }, []);
+  let startIndex = 0;
+
+  if (gameState.round > 1) {
+    startIndex = getLowestScoreTeamIndex(storedTeams);
+  }
+
+  setCurrentTeamIndex(startIndex);
+
+  // جمع کردن کارت‌ها
+  const allCards = storedPlayers
+    .flatMap((p) => p.givenCards)
+    .sort(() => 0.5 - Math.random());
+
+  setRemainingCards(allCards);
+
+  const gameSettings = JSON.parse(localStorage.getItem("game_settings")) || {};
+  setTimeLeft(gameSettings.roundTime || 30);
+}, []);
 
   useEffect(() => {
     localStorage.setItem("remaining_cards", JSON.stringify(remainingCards));

@@ -160,3 +160,9 @@ small{
     padding: 10px 0;
   }
 }
+.error-text {
+  display: block;
+  color: #ff4d4f;
+  font-size: 12px;
+  margin-top: 4px;
+}

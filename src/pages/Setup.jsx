@@ -16,6 +16,53 @@ const Setup = () => {
   const [removePerPlayer, setRemovePerPlayer] = useState(2);
   const [categories, setCategories] = useState([]);
   const [allCategories, setAllCategories] = useState([]);
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+  const newErrors = {};
+
+  // teams
+  if (teamsCount < 2 || teamsCount > 10) {
+    newErrors.teamsCount =
+      lang === "fa"
+        ? "تعداد تیم باید بین ۲ تا ۱۰ باشد"
+        : "Teams must be between 2 and 10";
+  }
+
+  // cards per player
+  if (cardsPerPlayer < 3 || cardsPerPlayer > 20) {
+    newErrors.cardsPerPlayer =
+      lang === "fa"
+        ? "تعداد کارت باید بین ۳ تا ۲۰ باشد"
+        : "Cards must be between 3 and 20";
+  }
+
+  // remove per player
+  if (removePerPlayer < 0 || removePerPlayer > 2) {
+    newErrors.removePerPlayer =
+      lang === "fa"
+        ? "کارت قابل حذف باید بین ۰ تا ۲ باشد"
+        : "Removable cards must be between 0 and 2";
+  }
+
+  if (removePerPlayer >= cardsPerPlayer) {
+    newErrors.removePerPlayer =
+      lang === "fa"
+        ? "کارت قابل حذف باید کمتر از تعداد کارت باشد"
+        : "Removable cards must be less than total cards";
+  }
+
+  // categories
+  if (categories.length < 3) {
+    newErrors.categories =
+      lang === "fa"
+        ? "حداقل ۳ دسته‌بندی انتخاب کنید"
+        : "Select at least 3 categories";
+  }
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
 
   // ترجمه‌ها
   const t = {
@@ -92,33 +139,25 @@ const Setup = () => {
       setCategories([...categories, cat]);
     }
   };
+const startGame = () => {
+  if (!validate()) return;
 
-  const startGame = () => {
-    if (teamsCount < 2) {
-      alert(t[lang].minTeamsAlert);
-      return;
-    }
-    if (categories.length < 3) {
-      alert(t[lang].minCategoriesAlert);
-      return;
-    }
+  const totalPlayers = teamsCount * 2;
 
-    const totalPlayers = teamsCount * 2;
+  saveGameSettings({
+    playersCount: totalPlayers,
+    cardsPerPlayer,
+    removePerPlayer,
+    categories,
+    language: lang,
+  });
 
-    saveGameSettings({
-      playersCount: totalPlayers,
-      cardsPerPlayer,
-      removePerPlayer,
-      categories,
-      language: lang,
-    });
+  createTeams(teamNames.slice(0, teamsCount));
+  createPlayers(totalPlayers);
+  setGamePhase("selection");
 
-    createTeams(teamNames.slice(0, teamsCount));
-    createPlayers(totalPlayers);
-    setGamePhase("selection");
-
-    window.location.reload();
-  };
+  window.location.reload();
+};
 
   const endGame = () => {
     const confirmEnd = window.confirm(t[lang].endConfirm);
@@ -132,16 +171,27 @@ const Setup = () => {
     <div className="setup-container">
       <h2>{t[lang].title}</h2>
 
-      <div className="form-group">
-        <label>{t[lang].teamCount}</label>
-        <input
-          type="number"
-          min={2}
-          max={10}
-          value={teamsCount}
-          onChange={(e) => setTeamsCount(parseInt(e.target.value))}
-        />
-      </div>
+   <div className="form-group">
+  <label>{t[lang].teamCount}</label>
+  <input
+    type="number"
+    min={2}
+    max={10}
+    value={teamsCount}
+    onChange={(e) => {
+      let value = parseInt(e.target.value);
+      if (isNaN(value)) value = 2;
+      if (value < 2) value = 2;
+      if (value > 10) value = 10;
+      setTeamsCount(value);
+    }}
+  />
+  <small className="hint-text">
+    {lang === "fa"
+      ? "حداقل 2 و حداکثر 10 تیم"
+      : "Minimum 2 and maximum 10 teams"}
+  </small>
+</div>
 
       {teamNames.map((name, index) => (
         <div className="form-group" key={index}>
@@ -160,43 +210,70 @@ const Setup = () => {
         </div>
       ))}
 
-      <div className="form-group">
-        <label>{t[lang].cardsPerPlayer}</label>
-        <input
-          type="number"
-          min={3}
-          max={15}
-          value={cardsPerPlayer}
-          onChange={(e) => setCardsPerPlayer(parseInt(e.target.value))}
-        />
-      </div>
+  <div className="form-group">
+  <label>{t[lang].cardsPerPlayer}</label>
+  <input
+    type="number"
+    min={3}
+    max={20}
+    value={cardsPerPlayer}
+    onChange={(e) => {
+      let value = parseInt(e.target.value);
+      if (isNaN(value)) value = 3;
+      if (value < 3) value = 3;
+      if (value > 20) value = 20;
+      setCardsPerPlayer(value);
+    }}
+  />
+  <small className="hint-text">
+    {lang === "fa"
+      ? "حداقل 3 و حداکثر 20 کارت برای هر نفر"
+      : "Minimum 3 and maximum 20 cards per player"}
+  </small>
+</div>
 
       <div className="form-group">
-        <label>{t[lang].removePerPlayer}</label>
-        <input
-          type="number"
-          min={0}
-          max={cardsPerPlayer - 1}
-          value={removePerPlayer}
-          onChange={(e) => setRemovePerPlayer(parseInt(e.target.value))}
-        />
-      </div>
+  <label>{t[lang].removePerPlayer}</label>
+  <input
+    type="number"
+    min={0}
+    max={2}
+    value={removePerPlayer}
+    onChange={(e) => {
+      let value = parseInt(e.target.value);
+      if (isNaN(value)) value = 0;
+      if (value < 0) value = 0;
+      if (value > 2) value = 2;
+      setRemovePerPlayer(value);
+    }}
+  />
+  <small className="hint-text">
+    {lang === "fa"
+      ? "می‌توان بین 0 تا 2 کارت حذف کرد"
+      : "Can remove 0 to 2 cards"}
+  </small>
+</div>
 
-      <div className="form-group">
-        <label>{t[lang].categories}</label>
-        <div className="checkbox-group">
-          {allCategories.map((cat) => (
-            <label key={cat}>
-              <input
-                type="checkbox"
-                checked={categories.includes(cat)}
-                onChange={() => toggleCategory(cat)}
-              />
-              {cat}
-            </label>
-          ))}
-        </div>
-      </div>
+<div className="form-group">
+  <label>{t[lang].categories}</label>
+  <div className="checkbox-group">
+    {allCategories.map((cat) => (
+      <label key={cat}>
+        <input
+          type="checkbox"
+          checked={categories.includes(cat)}
+          onChange={() => toggleCategory(cat)}
+        />
+        {cat}
+      </label>
+    ))}
+  </div>
+  <small className="hint-text">
+    {lang === "fa"
+      ? "حداقل 3 دسته‌بندی انتخاب شود"
+      : "Select at least 3 categories"}
+  </small>
+</div>
 
       <button className="start-btn" onClick={startGame}>
         {t[lang].start}
