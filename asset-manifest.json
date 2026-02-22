@@ -1,14 +1,14 @@
 {
   "files": {
-    "main.css": "/Time-s-Up/static/css/main.0df6415c.css",
-    "main.js": "/Time-s-Up/static/js/main.64c4aa2b.js",
+    "main.css": "/Time-s-Up/static/css/main.5ac7b93d.css",
+    "main.js": "/Time-s-Up/static/js/main.3c890c88.js",
     "service-worker.js": "/Time-s-Up/service-worker.js",
     "index.html": "/Time-s-Up/index.html",
-    "main.0df6415c.css.map": "/Time-s-Up/static/css/main.0df6415c.css.map",
-    "main.64c4aa2b.js.map": "/Time-s-Up/static/js/main.64c4aa2b.js.map"
+    "main.5ac7b93d.css.map": "/Time-s-Up/static/css/main.5ac7b93d.css.map",
+    "main.3c890c88.js.map": "/Time-s-Up/static/js/main.3c890c88.js.map"
   },
   "entrypoints": [
-    "static/css/main.0df6415c.css",
-    "static/js/main.64c4aa2b.js"
+    "static/css/main.5ac7b93d.css",
+    "static/js/main.3c890c88.js"
   ]
 }
